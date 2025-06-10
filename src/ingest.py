@@ -1,13 +1,10 @@
 import os
-import pathlib
 
-from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, Document
+from llama_index.core import Document
 from llama_index.core.node_parser import (
     SentenceSplitter, 
     MarkdownNodeParser
 )
-
-from itertools import chain
 
 import pymupdf4llm
 from docx2md import (
@@ -15,8 +12,6 @@ from docx2md import (
     DocxMedia,
     Converter
 )
-
-from IPython import embed
 
 def docx_convert(
     docx_file: str, 
@@ -117,7 +112,10 @@ def parse_and_get_nodes(folder: str) -> list:
         list: List of chunked nodes.
     """
     documents = parse_documents_in_folder(folder)
-    documents, *_ = list(zip(*documents))
+
+    # select documents where the parsing was successful (probably)
+    documents, *_ = list(filter(lambda x: x[1], zip(*documents)))
+
     return chunk_docs(documents)
 
 def node_lens(nodes: list) -> None:

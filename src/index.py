@@ -4,6 +4,7 @@ from llama_index.core import (
     StorageContext,
     Settings
 )
+from llama_index.core.postprocessor import SimilarityPostprocessor
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 import qdrant_client
 import qdrant_client.models
@@ -16,6 +17,8 @@ from IPython import embed
 Settings.embed_model = HuggingFaceEmbedding(
     model_name="KB/bert-base-swedish-cased"
 )
+# Disabled for retrieval demonstration
+Settings.llm = None
 
 def create_qdrant_client(storage_path: str = "./qdrant_db") -> qdrant_client.QdrantClient:
     """
@@ -77,18 +80,39 @@ def fill_vectordb(
         storage_context=storage_context,
     )
 
-def get_retriever(vector_store: VectorStoreIndex) -> Any:
+def get_vector_index(initial_data: List[Any]) -> Tuple[qdrant_client.QdrantClient, str, VectorStoreIndex]:
+    """
+    Create a Qdrant client, vector store, and fill the vector database with initial data.
+
+    Args:
+        initial_data (List[Any]): List of nodes to insert.
+
+    Returns:
+        Tuple[qdrant_client.QdrantClient, str, VectorStoreIndex]: The client, collection name, and vector index.
+    """
+    client = create_qdrant_client()
+    vector_store, collection_name = create_db_collection(client)
+    storage_context = setup_storage(vector_store)
+
+    # create initial vector database
+    return client, collection_name, fill_vectordb(initial_data, storage_context)
+
+def get_retriever(vector_index: VectorStoreIndex) -> Any:
     """
     Get a retriever from the vector store index.
 
     Args:
-        vector_store (VectorStoreIndex): The vector store index.
+        vector_index (VectorStoreIndex): The vector store index.
 
     Returns:
         Any: The retriever object.
     """
-    return vector_store.as_retriever(
-            similarity_top_k=25,
+    return vector_index.as_query_engine(
+            similarity_top_k=10,
+            node_postprocessors=[
+                # add reranker and other stuff here
+                SimilarityPostprocessor(similarity_cutoff=0.7)
+                ]
             )
 
 if __name__ == '__main__':
@@ -98,26 +122,27 @@ if __name__ == '__main__':
     - Loads and inserts nodes into the vector database.
     - Prints the number of vectors before and after insertion.
     - Retrieves and prints results for a sample query.
+    - Deletes the collection after use.
     """
-    
+
     client = create_qdrant_client()
     vector_store, collection_name = create_db_collection(client)
     storage_context = setup_storage(vector_store)
 
-    data = parse_and_get_nodes('data/')
-    initial_data = data[:50]
+    data: List[Any] = parse_and_get_nodes('data/')
+    initial_data: List[Any] = data[:50]
 
     # create initial vector database
-    vector_index = fill_vectordb(initial_data, storage_context)
+    vector_index: VectorStoreIndex = fill_vectordb(initial_data, storage_context)
     
-    num_vectors = client.count(
+    num_vectors: int = client.count(
         collection_name=collection_name,
         exact=True # Use exact=True for a precise number
     ).count
     print('Initial vectors/nodes in DB:', num_vectors)
 
     # test that we can add more data
-    additional_data = data[50:]
+    additional_data: List[Any] = data[50:]
     print(f'Adding {len(additional_data)} nodes')
     vector_index.insert_nodes(additional_data)
 
@@ -134,4 +159,4 @@ if __name__ == '__main__':
         print(f'\nResult {i}:')
         print(r)
 
-    #client.delete_collection(collection_name)
+    client.delete_collection(collection_name)
