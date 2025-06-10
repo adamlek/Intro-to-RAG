@@ -124,7 +124,6 @@ if __name__ == '__main__':
     - Retrieves and prints results for a sample query.
     - Deletes the collection after use.
     """
-
     client = create_qdrant_client()
     vector_store, collection_name = create_db_collection(client)
     storage_context = setup_storage(vector_store)
