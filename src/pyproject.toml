@@ -5,13 +5,11 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "docx>=0.2.4",
     "docx2md>=1.0.3",
     "ipython>=9.3.0",
     "llama-index>=0.12.41",
     "qdrant-client>=1.14.2",
     "pymupdf4llm>=0.0.24",
-    "unstructured>=0.17.2",
     "llama-index-vector-stores-qdrant>=0.6.0",
     "llama-index-embeddings-huggingface>=0.5.4",
     "sentence-transformers>=4.1.0",

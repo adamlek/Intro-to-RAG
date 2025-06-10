@@ -7,11 +7,9 @@ from llama_index.core import (
 from llama_index.core.postprocessor import SimilarityPostprocessor
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 import qdrant_client
-import qdrant_client.models
 from typing import Any, Tuple, List
 
 from ingest import parse_and_get_nodes
-from IPython import embed
 
 # set a simple embedding model for the vector store
 Settings.embed_model = HuggingFaceEmbedding(
