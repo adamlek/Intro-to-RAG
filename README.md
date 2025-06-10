@@ -1,1 +1,1 @@
-LOL
+Shitty windows, README incomming
